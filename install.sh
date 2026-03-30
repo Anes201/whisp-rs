@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# whisp-rs one-shot installer for Debian/Ubuntu/Pop!_OS
+# Usage: curl -sSL https://raw.githubusercontent.com/Anes201/whisp-rs/main/install.sh | bash
+
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+info()  { echo -e "${GREEN}✓${NC} $*"; }
+warn()  { echo -e "${YELLOW}⚠${NC} $*"; }
+error() { echo -e "${RED}✗${NC} $*"; }
+step()  { echo -e "\n${BOLD}── $* ──${NC}"; }
+
+# ── Check OS ──────────────────────────────────────────────
+step "Checking system"
+if ! command -v apt &>/dev/null; then
+    error "This installer requires apt (Debian/Ubuntu/Pop!_OS)"
+    echo "  Install manually: cargo install whisp-rs"
+    exit 1
+fi
+info "Debian-based system detected"
+
+# ── Install system dependencies ───────────────────────────
+step "Installing system dependencies"
+
+DEPS=()
+for pkg in alsa-utils ydotool wl-clipboard; do
+    if ! dpkg -s "$pkg" &>/dev/null; then
+        DEPS+=("$pkg")
+    fi
+done
+
+# wtype is not in standard repos — try to install from source or skip
+WTYPE_MISSING=false
+if ! command -v wtype &>/dev/null; then
+    WTYPE_MISSING=true
+fi
+
+if [ ${#DEPS[@]} -gt 0 ]; then
+    info "Installing: ${DEPS[*]}"
+    sudo apt update -qq
+    sudo apt install -y -qq "${DEPS[@]}"
+else
+    info "System deps already installed"
+fi
+
+# Try to install wtype (best injection method for Wayland)
+if $WTYPE_MISSING; then
+    if command -v cargo &>/dev/null; then
+        info "Installing wtype from source (needs libxkbcommon-dev, libwayland-dev)..."
+        sudo apt install -y -qq libxkbcommon-dev libwayland-dev 2>/dev/null || true
+        cargo install wtype 2>/dev/null && info "wtype installed" || warn "wtype install failed — will use clipboard fallback"
+    else
+        warn "wtype not found and cargo not available — will use clipboard fallback"
+    fi
+fi
+
+# ── Install Rust if missing ───────────────────────────────
+step "Checking Rust"
+if ! command -v cargo &>/dev/null; then
+    info "Installing Rust via rustup..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source "$HOME/.cargo/env"
+fi
+info "Rust $(rustc --version | awk '{print $2}')"
+
+# ── Install whisp-rs ─────────────────────────────────────
+step "Installing whisp-rs"
+cargo install whisp-rs
+info "whisp-rs installed"
+
+# ── Input group for hotkey access ────────────────────────
+step "Checking input group access"
+if groups | grep -qw input; then
+    info "User already in 'input' group"
+else
+    warn "Adding user to 'input' group (needed for hotkey detection)"
+    sudo usermod -aG input "$USER"
+    warn "Log out and back in for group change to take effect"
+fi
+
+# ── Start ydotoold if needed ─────────────────────────────
+step "Starting ydotoold daemon"
+if command -v ydotool &>/dev/null; then
+    if pgrep -x ydotoold &>/dev/null; then
+        info "ydotoold already running"
+    else
+        nohup ydotoold --socket-path=/tmp/.ydotool_socket &>/dev/null &
+        sleep 0.3
+        if pgrep -x ydotoold &>/dev/null; then
+            info "ydotoold started"
+        else
+            warn "ydotoold failed to start — run manually: ydotoold &"
+        fi
+    fi
+fi
+
+# ── Done ─────────────────────────────────────────────────
+echo ""
+echo -e "${BOLD}═══════════════════════════════════════════${NC}"
+echo -e "${GREEN}  whisp-rs installed successfully!${NC}"
+echo -e "${BOLD}═══════════════════════════════════════════${NC}"
+echo ""
+echo "  Run:        whisp-rs"
+echo "  Setup:      whisp-rs --setup"
+echo "  Set key:    whisp-rs --set-api-key <key>"
+echo ""
+echo "  Get a free Deepgram API key:"
+echo "  https://console.deepgram.com/signup"
+echo ""
+echo "  Support:    https://ko-fi.com/anes201"
+echo ""

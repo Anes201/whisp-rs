@@ -67,6 +67,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // 3. Start system tray
+    applet::set_hotkey_label(&config.hotkey.modifiers, &config.hotkey.key);
     let _tray_handle = applet::start_tray()?;
     log::info!("[tray] System tray started (idle state)");
 

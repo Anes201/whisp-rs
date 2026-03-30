@@ -150,6 +150,28 @@ pub fn run_setup_wizard() -> Result<Option<Config>, Box<dyn std::error::Error>> 
         println!();
     }
 
+    // --- Hotkey ---
+    println!();
+    println!("── Hotkey ─────────────────────────────────");
+
+    let hotkey_presets = [
+        ("Ctrl+Space", vec!["ctrl"], "space"),
+        ("Super+Space", vec!["super"], "space"),
+        ("Alt+Space", vec!["alt"], "space"),
+        ("Ctrl+Shift+Space", vec!["ctrl", "shift"], "space"),
+        ("Super+Shift+Space", vec!["super", "shift"], "space"),
+    ];
+    let hotkey_labels: Vec<&str> = hotkey_presets.iter().map(|(label, _, _)| *label).collect();
+
+    let hotkey_idx = Select::new()
+        .with_prompt("Dictation hotkey")
+        .items(&hotkey_labels)
+        .default(0)
+        .interact()?;
+    let (_, modifiers, key) = &hotkey_presets[hotkey_idx];
+    let modifiers: Vec<String> = modifiers.iter().map(|s| s.to_string()).collect();
+    let key = key.to_string();
+
     // --- Model ---
     println!();
     println!("── STT Model ─────────────────────────────");
@@ -194,10 +216,7 @@ pub fn run_setup_wizard() -> Result<Option<Config>, Box<dyn std::error::Error>> 
 
     // --- Build config ---
     let config = Config {
-        hotkey: HotkeyConfig {
-            modifiers: vec!["super".into()],
-            key: "space".into(),
-        },
+        hotkey: HotkeyConfig { modifiers, key },
         stt: SttConfig {
             api_key,
             model,

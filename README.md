@@ -11,7 +11,7 @@ Single binary. No local models. No bloat.
 
 ## How it works
 
-1. **Hold** `Super+Space`
+1. **Hold** `Ctrl+Space`
 2. **Speak** into your microphone
 3. **Release** — your words are typed at the cursor
 
@@ -40,6 +40,14 @@ Audio is captured via ALSA, sent to [Deepgram](https://deepgram.com/) for transc
 
 ## Install
 
+### One-shot installer (Debian/Ubuntu/Pop!_OS)
+
+Installs all system dependencies + whisp-rs in one command:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/Anes201/whisp-rs/main/install.sh | bash
+```
+
 ### From crates.io
 
 ```bash
@@ -64,6 +72,7 @@ whisp-rs
 ```
 
 If no config exists, the setup wizard launches automatically. It asks for:
+- **Hotkey** (default: `Ctrl+Space`)
 - Deepgram API key ([get one free](https://console.deepgram.com/signup) — $200 credit)
 - STT model (default: `nova-2-general`)
 - Language
@@ -91,7 +100,7 @@ Config file: `~/.config/whisp-rs/config.toml`
 
 ```toml
 [hotkey]
-modifiers = ["super"]
+modifiers = ["ctrl"]        # ctrl | super | alt | shift (or combo: ["ctrl", "shift"])
 key = "space"
 
 [stt]

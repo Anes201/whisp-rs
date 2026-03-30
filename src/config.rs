@@ -41,7 +41,7 @@ pub struct AudioConfig {
 }
 
 fn default_modifiers() -> Vec<String> {
-    vec!["super".into()]
+    vec!["ctrl".into()]
 }
 fn default_key() -> String {
     "space".into()
