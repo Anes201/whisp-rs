@@ -1,6 +1,6 @@
 [package]
 name = "whisp-rs"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Lightweight voice-to-text dictation for Linux (Wayland/COSMIC). Hold a hotkey, speak, release — text appears."
 license = "MIT"
