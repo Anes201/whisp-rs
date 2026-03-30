@@ -42,13 +42,23 @@ Audio is captured via ALSA, sent to [Deepgram](https://deepgram.com/) for transc
 
 ### One-shot installer (Debian/Ubuntu/Pop!_OS)
 
-Installs all system dependencies + whisp-rs in one command:
+No Rust required. Downloads the pre-built binary and installs all system deps:
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/Anes201/whisp-rs/main/install.sh | bash
 ```
 
-### From crates.io
+### Pre-built binary
+
+Download from [GitHub Releases](https://github.com/Anes201/whisp-rs/releases), extract, and run:
+
+```bash
+tar xzf whisp-rs-x86_64-linux.tar.gz
+sudo mv whisp-rs /usr/local/bin/
+whisp-rs --setup
+```
+
+### From crates.io (requires Rust)
 
 ```bash
 cargo install whisp-rs

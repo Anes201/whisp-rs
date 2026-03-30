@@ -4,6 +4,11 @@ set -euo pipefail
 # whisp-rs one-shot installer for Debian/Ubuntu/Pop!_OS
 # Usage: curl -sSL https://raw.githubusercontent.com/Anes201/whisp-rs/main/install.sh | bash
 
+REPO="Anes201/whisp-rs"
+VERSION="0.1.2"
+BINARY_URL="https://github.com/${REPO}/releases/download/v${VERSION}/whisp-rs-x86_64-linux.tar.gz"
+INSTALL_DIR="/usr/local/bin"
+
 BOLD='\033[1m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -12,15 +17,13 @@ NC='\033[0m'
 
 info()  { echo -e "${GREEN}✓${NC} $*"; }
 warn()  { echo -e "${YELLOW}⚠${NC} $*"; }
-error() { echo -e "${RED}✗${NC} $*"; }
+error() { echo -e "${RED}✗${NC} $*"; exit 1; }
 step()  { echo -e "\n${BOLD}── $* ──${NC}"; }
 
 # ── Check OS ──────────────────────────────────────────────
 step "Checking system"
 if ! command -v apt &>/dev/null; then
     error "This installer requires apt (Debian/Ubuntu/Pop!_OS)"
-    echo "  Install manually: cargo install whisp-rs"
-    exit 1
 fi
 info "Debian-based system detected"
 
@@ -34,12 +37,6 @@ for pkg in alsa-utils ydotool wl-clipboard; do
     fi
 done
 
-# wtype is not in standard repos — try to install from source or skip
-WTYPE_MISSING=false
-if ! command -v wtype &>/dev/null; then
-    WTYPE_MISSING=true
-fi
-
 if [ ${#DEPS[@]} -gt 0 ]; then
     info "Installing: ${DEPS[*]}"
     sudo apt update -qq
@@ -49,29 +46,37 @@ else
 fi
 
 # Try to install wtype (best injection method for Wayland)
-if $WTYPE_MISSING; then
+if ! command -v wtype &>/dev/null; then
     if command -v cargo &>/dev/null; then
-        info "Installing wtype from source (needs libxkbcommon-dev, libwayland-dev)..."
+        info "Installing wtype from source..."
         sudo apt install -y -qq libxkbcommon-dev libwayland-dev 2>/dev/null || true
         cargo install wtype 2>/dev/null && info "wtype installed" || warn "wtype install failed — will use clipboard fallback"
     else
-        warn "wtype not found and cargo not available — will use clipboard fallback"
+        warn "wtype not found — will use clipboard fallback (install cargo + wtype for best experience)"
     fi
 fi
 
-# ── Install Rust if missing ───────────────────────────────
-step "Checking Rust"
-if ! command -v cargo &>/dev/null; then
-    info "Installing Rust via rustup..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    source "$HOME/.cargo/env"
-fi
-info "Rust $(rustc --version | awk '{print $2}')"
+# ── Download whisp-rs binary ─────────────────────────────
+step "Downloading whisp-rs v${VERSION}"
 
-# ── Install whisp-rs ─────────────────────────────────────
-step "Installing whisp-rs"
-cargo install whisp-rs
-info "whisp-rs installed"
+TMPDIR=$(mktemp -d)
+trap "rm -rf $TMPDIR" EXIT
+
+info "Downloading from GitHub Releases..."
+if command -v curl &>/dev/null; then
+    curl -sSL -o "$TMPDIR/whisp-rs.tar.gz" "$BINARY_URL"
+elif command -v wget &>/dev/null; then
+    wget -q -O "$TMPDIR/whisp-rs.tar.gz" "$BINARY_URL"
+else
+    error "Neither curl nor wget found. Install one: sudo apt install curl"
+fi
+
+tar xzf "$TMPDIR/whisp-rs.tar.gz" -C "$TMPDIR"
+chmod +x "$TMPDIR/whisp-rs"
+
+info "Installing to ${INSTALL_DIR}/whisp-rs"
+sudo mv "$TMPDIR/whisp-rs" "${INSTALL_DIR}/whisp-rs"
+info "whisp-rs ${VERSION} installed"
 
 # ── Input group for hotkey access ────────────────────────
 step "Checking input group access"
@@ -102,7 +107,7 @@ fi
 # ── Done ─────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}═══════════════════════════════════════════${NC}"
-echo -e "${GREEN}  whisp-rs installed successfully!${NC}"
+echo -e "${GREEN}  whisp-rs v${VERSION} installed successfully!${NC}"
 echo -e "${BOLD}═══════════════════════════════════════════${NC}"
 echo ""
 echo "  Run:        whisp-rs"
