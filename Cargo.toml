@@ -1,0 +1,31 @@
+[package]
+name = "whisp-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Lightweight voice-to-text dictation for Linux (Wayland/COSMIC). Hold a hotkey, speak, release — text appears."
+license = "MIT"
+repository = "https://github.com/anes201/whisp-rs"
+homepage = "https://github.com/anes201/whisp-rs"
+readme = "README.md"
+keywords = ["voice", "dictation", "speech-to-text", "wayland", "deepgram"]
+categories = ["command-line-utilities", "multimedia::audio"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "multipart", "json", "rustls-tls"] }
+ksni = { version = "0.3", default-features = false, features = ["blocking", "tokio"] }
+evdev = "0.13"
+dirs = "6"
+log = "0.4"
+env_logger = "0.11"
+dialoguer = { version = "0.11", default-features = false }
+tokio = { version = "1", features = ["rt"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

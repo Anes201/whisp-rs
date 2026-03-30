@@ -1,0 +1,12 @@
+[hotkey]
+modifiers = ["super"]
+key = "space"
+
+[stt]
+# api_key = "your-deepgram-api-key"
+model = "nova-2-general"
+language = "en"
+
+[audio]
+sample_rate = 16000
+channels = 1
